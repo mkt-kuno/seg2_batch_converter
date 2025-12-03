@@ -62,7 +62,7 @@ export class SEG2Parser {
   private parseStrings(from: number, to: number): string[] {
     const result: string[] = [];
     const bytes = new Uint8Array(this.buffer, from, to - from);
-    
+
     let currentString = '';
     for (let i = 0; i < bytes.length; i++) {
       if (bytes[i] === 0) {
@@ -74,7 +74,7 @@ export class SEG2Parser {
         currentString += String.fromCharCode(bytes[i]);
       }
     }
-    
+
     return result;
   }
 
@@ -85,36 +85,36 @@ export class SEG2Parser {
     }
 
     let p = 2;
-    
+
     // Revision
-    const revision = this.readUint16(p);
+    // const revision = this.readUint16(p);
     p += 2;
-    
+
     // M (size of trace pointer sub-block)
-    const m = this.readUint16(p);
+    // const m = this.readUint16(p);
     p += 2;
-    
+
     // N (number of traces)
     const n = this.readUint16(p);
     p += 2;
-    
+
     // Skip reserved bytes (0x08-0x1F)
     p += 0x08 + 0x10;
-    
+
     // Read trace pointers
     this.pointerList = [];
     for (let i = 0; i < n; i++) {
       this.pointerList.push(this.readUint32(p));
       p += 4;
     }
-    
+
     this.maxCh = this.pointerList.length;
-    
+
     // Parse first channel to get frequency info
     if (this.maxCh > 0) {
       const channelData = this.parseTraceDescriptor(this.pointerList[0]);
       this.freeStrings = channelData.freeStrings;
-      
+
       for (const fs of this.freeStrings) {
         if (fs.includes('SAMPLE_INTERVAL')) {
           const parts = fs.split(/\s+/);
@@ -130,38 +130,38 @@ export class SEG2Parser {
 
   private parseTraceDescriptor(pointer: number): { samples: number[]; dataFormat: number; freeStrings: string[] } {
     let p = pointer;
-    
+
     // Check trace descriptor magic number
     if (this.readUint16(p) !== 0x4422) {
       throw new Error('Invalid trace descriptor!');
     }
     p += 2;
-    
+
     // X (size of this block header)
     const x = this.readUint16(p);
     p += 2;
-    
+
     // Y (size of data block)
-    const y = this.readUint32(p);
+    // const y = this.readUint32(p);
     p += 4;
-    
+
     // NS (number of samples)
     const ns = this.readUint32(p);
     p += 4;
-    
+
     // Data format
     const df = new Uint8Array(this.buffer)[p];
     p += 4;
-    
+
     // Skip reserved bytes
     p += 0x10;
-    
+
     // Parse free-format strings
     const freeStrings = this.parseStrings(p, pointer + x);
-    
+
     // Move to data start
     p = pointer + x;
-    
+
     // Read samples
     const samples: number[] = [];
     for (let i = 0; i < ns; i++) {
@@ -186,7 +186,7 @@ export class SEG2Parser {
           break;
       }
     }
-    
+
     return { samples, dataFormat: df, freeStrings };
   }
 
@@ -210,7 +210,7 @@ export class SEG2Parser {
     if (channel >= this.maxCh) {
       return null;
     }
-    
+
     const { samples } = this.parseTraceDescriptor(this.pointerList[channel]);
     return samples;
   }
